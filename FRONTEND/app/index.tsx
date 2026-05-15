@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   useColorScheme,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { SectionHeader, Card } from '@/components/ui/Card';
 import { colors } from '@/lib/colors';
@@ -17,6 +18,8 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const scheme = isDark ? colors.dark : colors.light;
+  const headerShadowColor = isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.16)';
+  const headerShadowOpacity = isDark ? 0.18 : 0.14;
 
   const modules = [
     {
@@ -53,23 +56,88 @@ export default function HomeScreen() {
     scrollContent: {
       paddingBottom: spacing.xl,
     },
-    greetingCard: {
+    headerSection: {
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.lg,
+      backgroundColor: scheme.surfaceSecondary,
+      borderBottomLeftRadius: radius['2xl'],
+      borderBottomRightRadius: radius['2xl'],
+      shadowColor: headerShadowColor,
+      shadowOpacity: headerShadowOpacity,
+      shadowRadius: 18,
+      shadowOffset: { width: 0, height: 10 },
+      elevation: 6,
+      zIndex: 10,
+    },
+    greetingContainer: {
+      marginBottom: spacing.md,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center'
+    },
+    timeGreeting: {
+      fontSize: 14,
+      color: scheme.textSecondary,
+      fontWeight: '500',
+      marginBottom: spacing.xs,
     },
     greeting: {
-      fontSize: 28,
+      fontSize: 32,
       fontWeight: '700',
       color: scheme.textPrimary,
-      marginBottom: spacing.sm,
+      marginBottom: spacing.xs,
     },
     subGreeting: {
       fontSize: 14,
       color: scheme.textSecondary,
     },
+    kpiGrid: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      marginBottom: spacing.lg,
+    },
+    kpiCard: {
+      flex: 1,
+      backgroundColor: scheme.surfaceSecondary,
+      borderRadius: radius.lg,
+      padding: spacing.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 100,
+    },
+    kpiValue: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: scheme.primary,
+      marginBottom: spacing.xs,
+    },
+    kpiLabel: {
+      fontSize: 11,
+      color: scheme.textSecondary,
+      textAlign: 'center',
+    },
+    quickActionsContainer: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      marginTop: spacing.lg,
+    },
+    quickActionButton: {
+      flex: 1,
+      backgroundColor: scheme.primary,
+      borderRadius: radius.md,
+      paddingVertical: spacing.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    quickActionButtonText: {
+      color: '#FFFFFF',
+      fontSize: 12,
+      fontWeight: '600',
+    },
     modulesSection: {
       paddingHorizontal: spacing.md,
       paddingTop: spacing.lg,
+      backgroundColor: scheme.background,
     },
     moduleCard: {
       backgroundColor: scheme.surface,
@@ -124,44 +192,62 @@ export default function HomeScreen() {
     },
   });
 
+  const getTimeGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 18) return 'Good Afternoon';
+    return 'Good Evening';
+  };
+
+  const kpiData = [
+    { label: 'Visits', value: '12' },
+    { label: 'Completed', value: '8' },
+    { label: 'Pending', value: '4' },
+  ];
+
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.greetingCard}>
-        <Text style={styles.greeting}>Welcome Back</Text>
-        <Text style={styles.subGreeting}>
-          Field Force Management System
-        </Text>
-      </View>
+    <SafeAreaView style={styles.container}>
+      <ScrollView
+        stickyHeaderIndices={[0]}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header Section with KPIs and Quick Actions */}
+        <View style={styles.headerSection}>
+          <View style={styles.greetingContainer}>
+            <Text style={styles.timeGreeting}>{getTimeGreeting()}</Text>
+            <Text style={styles.greeting}>Welcome Back</Text>
+            <Text style={styles.subGreeting}>Sales Force Management System</Text>
+          </View>                  
+        </View>
 
-      <View style={styles.modulesSection}>
-        <SectionHeader title="Modules" subtitle="Access key features" />
+        {/* Modules Section */}
+        <View style={styles.modulesSection}>
+          <SectionHeader title="Modules" subtitle="Access key features" />
 
-        {modules.map((module) => (
-          <TouchableOpacity
-            key={module.id}
-            activeOpacity={0.7}
-            onPress={() => router.push(module.route as any)}
-          >
-            <View style={styles.moduleCard}>
-              <View style={styles.moduleHeader}>
-                <Text style={styles.moduleIcon}>{module.icon}</Text>
-                <View style={styles.moduleTitleSection}>
-                  <Text style={styles.moduleTitle}>{module.title}</Text>
-                  <Text style={styles.moduleSubtitle}>{module.subtitle}</Text>
+          {modules.map((module) => (
+            <TouchableOpacity
+              key={module.id}
+              activeOpacity={0.7}
+              onPress={() => router.push(module.route as any)}
+            >
+              <View style={styles.moduleCard}>
+                <View style={styles.moduleHeader}>
+                  <Text style={styles.moduleIcon}>{module.icon}</Text>
+                  <View style={styles.moduleTitleSection}>
+                    <Text style={styles.moduleTitle}>{module.title}</Text>
+                    <Text style={styles.moduleSubtitle}>{module.subtitle}</Text>
+                  </View>
+                </View>
+                <Text style={styles.moduleDescription}>{module.description}</Text>
+                <View style={styles.ctaButton}>
+                  <Text style={styles.ctaButtonText}>Open →</Text>
                 </View>
               </View>
-              <Text style={styles.moduleDescription}>{module.description}</Text>
-              <View style={styles.ctaButton}>
-                <Text style={styles.ctaButtonText}>Open →</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </ScrollView>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }

@@ -9,6 +9,8 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { SectionHeader } from '@/components/ui/Card';
 import { EmployeeCard } from '@/components/modules/employees/EmployeeCard';
 import { colors } from '@/lib/colors';
@@ -125,6 +127,7 @@ const EmployeesListScreen: React.FC<EmployeesListScreenProps> = ({
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const scheme = isDark ? colors.dark : colors.light;
+  const router = useRouter();
 
   const [searchText, setSearchText] = useState('');
   const [filterRole, setFilterRole] = useState<string | null>(null);
@@ -207,7 +210,7 @@ const EmployeesListScreen: React.FC<EmployeesListScreenProps> = ({
   });
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <SectionHeader title="Employees" subtitle="Manage your sales team" />
 
       <View style={styles.searchContainer}>
@@ -264,14 +267,18 @@ const EmployeesListScreen: React.FC<EmployeesListScreenProps> = ({
             <View style={styles.contentContainer}>
               <EmployeeCard
                 employee={item}
-                onPress={() => onEmployeePress?.(item)}
+                onPress={() => router.push({
+                  pathname: '/employees/[id]',
+                  params: { id: item.id.toString(), data: JSON.stringify(item, (key, value) => typeof value === 'bigint' ? value.toString() : value) }
+                })}
               />
             </View>
           )}
-          scrollEnabled={false}
+          scrollEnabled={true}
+          contentContainerStyle={styles.scrollContent}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 };
 

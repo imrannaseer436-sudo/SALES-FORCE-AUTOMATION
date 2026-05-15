@@ -54,8 +54,14 @@ export default function ContactDetailScreen() {
   const scheme = isDark ? colors.dark : colors.light;
   const params = useLocalSearchParams();
   const id = params.id as string;
+  const data = params.data as string;
 
-  const contact = getMockContactDetail(id || '1');
+  // Use passed data if available, otherwise fallback to mock data
+  const contact: Contact & { user?: User } = data
+    ? JSON.parse(data)
+    : getMockContactDetail(id || '1');
+
+  const user = contact.user;
 
   const getInitials = (name: string) => {
     return name

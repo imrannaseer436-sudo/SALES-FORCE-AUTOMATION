@@ -56,8 +56,13 @@ export default function EmployeeDetailScreen() {
   const scheme = isDark ? colors.dark : colors.light;
   const params = useLocalSearchParams();
   const id = params.id as string;
+  const data = params.data as string;
 
-  const employee = getMockEmployeeDetail(id || '1');
+  // Use passed data if available, otherwise fallback to mock data
+  const employee: Employee & { user?: User } = data
+    ? JSON.parse(data)
+    : getMockEmployeeDetail(id || '1');
+
   const user = employee.user;
 
   const getInitials = (name: string) => {
