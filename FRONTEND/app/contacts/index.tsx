@@ -9,6 +9,8 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { SectionHeader } from '@/components/ui/Card';
 import { ContactCard } from '@/components/modules/contacts/ContactCard';
 import { colors } from '@/lib/colors';
@@ -115,6 +117,7 @@ const ContactsListScreen: React.FC<ContactsListScreenProps> = ({
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const scheme = isDark ? colors.dark : colors.light;
+  const router = useRouter();
 
   const [searchText, setSearchText] = useState('');
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
@@ -199,7 +202,7 @@ const ContactsListScreen: React.FC<ContactsListScreenProps> = ({
   });
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <SectionHeader title="Contacts" subtitle="Agents, Distributors & Retailers" />
 
       <View style={styles.searchContainer}>
@@ -262,14 +265,18 @@ const ContactsListScreen: React.FC<ContactsListScreenProps> = ({
             <View style={styles.contentContainer}>
               <ContactCard
                 contact={item}
-                onPress={() => onContactPress?.(item)}
+                onPress={() => router.push({
+                  pathname: '/contacts/[id]',
+                  params: { id: item.id.toString(), data: JSON.stringify(item, (key, value) => typeof value === 'bigint' ? value.toString() : value) }
+                })}
               />
             </View>
           )}
-          scrollEnabled={false}
+          scrollEnabled={true}
+          contentContainerStyle={styles.scrollContent}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 };
 

@@ -90,7 +90,7 @@ export const ContactCard: React.FC<ContactCardProps> = ({ contact, onPress }) =>
       paddingHorizontal: spacing.sm,
       paddingVertical: spacing.sm,
       borderRadius: 8,
-      backgroundColor: scheme.surfaceSecondary,
+      // backgroundColor: scheme.surfaceSecondary,
     },
     gstLabel: {
       fontSize: 11,
