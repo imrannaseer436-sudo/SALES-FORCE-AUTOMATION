@@ -27,7 +27,7 @@ export const EmployeeCard: React.FC<EmployeeCardProps> = ({ employee, onPress })
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
       case 'rsm':
-        return 'primary';
+        return 'danger';
       case 'salesman':
         return 'info';
       case 'sm':
@@ -104,6 +104,7 @@ export const EmployeeCard: React.FC<EmployeeCardProps> = ({ employee, onPress })
             <View style={styles.avatarContainer}>
               <Avatar
                 initials={getInitials(user?.name || 'Employee')}
+                imageUrl={employee.img_url}
                 size="lg"
               />
             </View>

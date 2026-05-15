@@ -6,13 +6,17 @@ import {
   ScrollView,
   useColorScheme,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Card, Badge, SectionHeader } from '@/components/ui/Card';
 import { Avatar, StatusIndicator } from '@/components/ui/Avatar';
+import { Button } from '@/components/ui';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/lib/colors';
 import { spacing, radius } from '@/lib/spacing';
 import { Employee, User } from '@/types/schema';
+import { useEmployeeStore } from '@/store/employeeStore';
 
 // Mock employee detail data
 const getMockEmployeeDetail = (id: string): Employee & { user?: User } => {
@@ -55,6 +59,8 @@ export default function EmployeeDetailScreen() {
   const isDark = colorScheme === 'dark';
   const scheme = isDark ? colors.dark : colors.light;
   const params = useLocalSearchParams();
+  const router = useRouter();
+  const { deleteEmployee, setLoading, loading } = useEmployeeStore();
   const id = params.id as string;
   const data = params.data as string;
 
@@ -76,7 +82,7 @@ export default function EmployeeDetailScreen() {
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
       case 'rsm':
-        return 'primary';
+        return 'danger';
       case 'salesman':
         return 'info';
       case 'sm':
@@ -84,6 +90,56 @@ export default function EmployeeDetailScreen() {
       default:
         return 'primary';
     }
+  };
+
+  const handleEdit = () => {
+    // Navigate to edit screen (we'll create this next)
+    router.push(`/employees/${id}/edit?data=${encodeURIComponent(JSON.stringify(employee))}`);
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      'Delete Employee',
+      `Are you sure you want to delete ${user?.name}? This action cannot be undone.`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setLoading(true);
+              // Simulate API call delay
+              await new Promise(resolve => setTimeout(resolve, 1000));
+
+              deleteEmployee(employee.id);
+
+              Alert.alert(
+                'Success',
+                'Employee deleted successfully!',
+                [
+                  {
+                    text: 'OK',
+                    onPress: () => router.back(),
+                  },
+                ]
+              );
+            } catch (error) {
+              Alert.alert(
+                'Error',
+                'Failed to delete employee. Please try again.',
+                [{ text: 'OK' }]
+              );
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const styles = StyleSheet.create({
@@ -115,6 +171,9 @@ export default function EmployeeDetailScreen() {
       fontSize: 14,
       color: scheme.textSecondary,
       marginBottom: spacing.md,
+    },
+    badge: {
+      alignSelf: 'center',
     },
     infoSection: {
       marginBottom: spacing.lg,
@@ -167,12 +226,25 @@ export default function EmployeeDetailScreen() {
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.sm,
-      marginBottom: spacing.md,
+      // marginBottom: spacing.md,
     },
     statusText: {
       fontSize: 14,
       fontWeight: '500',
       color: scheme.textPrimary,
+    },
+    actionContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginTop: spacing.lg,
+      marginBottom: spacing.xl,
+    },
+    actionButton: {
+      flex: 1,
+      height: 48,
+    },
+    actionButtonLeft: {
+      marginRight: spacing.md,
     },
   });
 
@@ -183,11 +255,12 @@ export default function EmployeeDetailScreen() {
       showsVerticalScrollIndicator={false}
     >
       <Card style={styles.heroCard}>
-        <Avatar initials={getInitials(user?.name || 'N/A')} size="lg" />
+        <Avatar initials={getInitials(user?.name || 'N/A')} imageUrl={employee.img_url} size="lg" />
         <View style={styles.nameSection}>
           <Text style={styles.name}>{user?.name || 'N/A'}</Text>
           <Text style={styles.email}>{user?.email || 'N/A'}</Text>
           <Badge
+            style={styles.badge}
             label={user?.role?.toUpperCase() || 'N/A'}
             variant={getRoleBadgeVariant(user?.role || '')}
           />
@@ -268,6 +341,26 @@ export default function EmployeeDetailScreen() {
           </View>
         </View>
       </Card>
+
+      <View style={styles.actionContainer}>
+        <Button
+          title="Edit"
+          leftIcon={<Ionicons name="pencil" size={20} color={scheme.primary} />}
+          onPress={handleEdit}
+          variant="outline"
+          size="sm"
+          style={[styles.actionButton, styles.actionButtonLeft]}
+        />
+        <Button
+          title="Delete"
+          leftIcon={<Ionicons name="trash" size={20} color="#FFFFFF" />}
+          onPress={handleDelete}
+          variant="danger"
+          size="sm"
+          loading={loading}
+          style={styles.actionButton}
+        />
+      </View>
     </ScrollView>
   );
 }

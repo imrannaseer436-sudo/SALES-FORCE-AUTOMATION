@@ -30,9 +30,15 @@ export default function RootLayout() {
       >
         <Stack.Screen name="index" />
         <Stack.Screen
-          name="employees"
+          name="employees/index"
           options={{
             title: 'Employees',
+          }}
+        />
+        <Stack.Screen
+          name="employees/create"
+          options={{
+            title: 'Create Employee',
           }}
         />
         <Stack.Screen
@@ -42,7 +48,13 @@ export default function RootLayout() {
           }}
         />
         <Stack.Screen
-          name="contacts"
+          name="employees/[id]/edit"
+          options={{
+            title: 'Edit Employee',
+          }}
+        />
+        <Stack.Screen
+          name="contacts/index"
           options={{
             title: 'Contacts',
           }}
@@ -54,7 +66,7 @@ export default function RootLayout() {
           }}
         />
         <Stack.Screen
-          name="network"
+          name="network/index"
           options={{
             title: 'Hierarchy',
           }}

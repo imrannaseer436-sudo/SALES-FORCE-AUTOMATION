@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, useColorScheme } from 'react-native';
+import { Image, View, Text, StyleSheet, useColorScheme } from 'react-native';
 import { colors } from '@/lib/colors';
 import { spacing, radius } from '@/lib/spacing';
 
@@ -36,6 +36,13 @@ export const Avatar: React.FC<AvatarProps> = ({
       backgroundColor: backgroundColor || scheme.primary,
       justifyContent: 'center',
       alignItems: 'center',
+      overflow: 'hidden',
+    },
+    avatarImage: {
+      width: sizeConfig.width,
+      height: sizeConfig.height,
+      borderRadius: sizeConfig.width / 2,
+      resizeMode: 'cover',
     },
     text: {
       color: '#FFFFFF',
@@ -46,7 +53,11 @@ export const Avatar: React.FC<AvatarProps> = ({
 
   return (
     <View style={styles.avatar}>
-      <Text style={styles.text}>{initials}</Text>
+      {imageUrl ? (
+        <Image source={{ uri: imageUrl }} style={styles.avatarImage} />
+      ) : (
+        <Text style={styles.text}>{initials}</Text>
+      )}
     </View>
   );
 };

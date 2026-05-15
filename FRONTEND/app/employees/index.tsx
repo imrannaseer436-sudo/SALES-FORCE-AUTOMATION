@@ -11,11 +11,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { SectionHeader } from '@/components/ui/Card';
 import { EmployeeCard } from '@/components/modules/employees/EmployeeCard';
+import { Button } from '@/components/ui';
 import { colors } from '@/lib/colors';
 import { spacing, radius } from '@/lib/spacing';
 import { Employee, User } from '@/types/schema';
+import { useEmployeeStore } from '@/store/employeeStore';
 
 // Mock data for demonstration
 const MOCK_EMPLOYEES: (Employee & { user?: User })[] = [
@@ -128,12 +131,13 @@ const EmployeesListScreen: React.FC<EmployeesListScreenProps> = ({
   const isDark = colorScheme === 'dark';
   const scheme = isDark ? colors.dark : colors.light;
   const router = useRouter();
+  const { employees } = useEmployeeStore();
 
   const [searchText, setSearchText] = useState('');
   const [filterRole, setFilterRole] = useState<string | null>(null);
-  const [employees, setEmployees] = useState(MOCK_EMPLOYEES);
+  const [employeesData, setEmployeesData] = useState(employees.length > 0 ? employees : MOCK_EMPLOYEES);
 
-  const filteredEmployees = employees.filter((emp) => {
+  const filteredEmployees = employeesData.filter((emp) => {
     const matchesSearch =
       emp.user?.name?.toLowerCase().includes(searchText.toLowerCase()) ||
       emp.code?.toLowerCase().includes(searchText.toLowerCase());
@@ -149,6 +153,26 @@ const EmployeesListScreen: React.FC<EmployeesListScreenProps> = ({
     container: {
       flex: 1,
       backgroundColor: scheme.background,
+    },
+    headerContainer: {
+      backgroundColor: scheme.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: scheme.border,
+      paddingVertical: spacing.md,
+    },
+    createButton: {
+      marginLeft: spacing.md,
+      flexShrink: 0,
+      width: 44,
+      height: 44,
+      borderRadius: 999,
+      paddingHorizontal: 0,
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.md,
     },
     scrollContent: {
       paddingBottom: spacing.lg,
@@ -211,7 +235,23 @@ const EmployeesListScreen: React.FC<EmployeesListScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.container}>
-      <SectionHeader title="Employees" subtitle="Manage your sales team" />
+      <View style={styles.headerContainer}>
+        <View style={styles.headerRow}>
+          <SectionHeader
+            title="Employees"
+            subtitle="Manage your sales team"
+            action={
+              <Button
+                title=""
+                leftIcon={<Ionicons name="add" size={22} color="#FFFFFF" />}
+                onPress={() => router.push('/employees/create')}
+                size="sm"
+                style={styles.createButton}
+              />
+            }
+          />
+        </View>
+      </View>
 
       <View style={styles.searchContainer}>
         <TextInput
