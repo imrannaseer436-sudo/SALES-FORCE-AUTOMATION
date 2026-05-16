@@ -21,6 +21,8 @@ const employeeBaseSchema = z.object({
   pincode: z.string().regex(/^[1-9][0-9]{5}$/, 'Invalid pincode (6 digits)'),
   aadhar_no: z.string().regex(/^[0-9]{12}$/, 'Aadhar number must be 12 digits').optional().or(z.literal('')),
   img_url: z.string().url('Invalid image URL').optional().or(z.literal('')),
+  // Local image file picked in the app; will be sent as multipart/form-data
+  img_file: z.any().optional(),
   uan: z.string().min(1, 'UAN is required').max(50, 'UAN must be less than 50 characters'),
   esi_no: z.string().min(1, 'ESI number is required').max(50, 'ESI number must be less than 50 characters'),
   pf_no: z.string().min(1, 'PF number is required').max(50, 'PF number must be less than 50 characters'),
@@ -39,5 +41,27 @@ export const employeeEditSchema = employeeBaseSchema.extend({
     .or(z.literal('')),
 });
 
+const userBaseSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name must be less than 100 characters'),
+  email: z.string().email('Invalid email address'),
+  phone: z.string().regex(/^[\+]?[1-9][\d]{0,15}$/, 'Invalid phone number'),
+  role: userRoleSchema,
+  is_active: z.boolean().default(true),
+});
+
+export const userCreateSchema = userBaseSchema.extend({
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+});
+
+export const userEditSchema = userBaseSchema.extend({
+  password: z
+    .string()
+    .min(6, 'Password must be at least 6 characters')
+    .optional()
+    .or(z.literal('')),
+});
+
 export type EmployeeCreateFormData = z.input<typeof employeeCreateSchema>;
 export type EmployeeEditFormData = z.input<typeof employeeEditSchema>;
+export type UserCreateFormData = z.input<typeof userCreateSchema>;
+export type UserEditFormData = z.input<typeof userEditSchema>;

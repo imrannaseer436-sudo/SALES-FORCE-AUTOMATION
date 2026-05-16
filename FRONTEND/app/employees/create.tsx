@@ -26,6 +26,7 @@ import { employeeCreateSchema, type EmployeeCreateFormData } from '@/lib/validat
 import { useEmployeeStore } from '@/store/employeeStore';
 import { useUserStore } from '@/store/userStore';
 import { Employee, User, UserRole } from '@/types/schema';
+import { employeeService } from '@/services/employeeService';
 
 export default function CreateEmployeeScreen() {
   const router = useRouter();
@@ -35,7 +36,7 @@ export default function CreateEmployeeScreen() {
   const { addEmployee, setLoading, loading } = useEmployeeStore();
   const { addUser } = useUserStore();
 
-  const roles: UserRole[] = ['salesman', 'rsm', 'sm'];
+  const roles: UserRole[] = ['salesman'];
 
   const [showDatePicker, setShowDatePicker] = useState(false);
 
@@ -74,7 +75,6 @@ export default function CreateEmployeeScreen() {
       state: '',
       pincode: '',
       aadhar_no: '',
-      img_url: '',
       uan: '',
       esi_no: '',
       pf_no: '',
@@ -83,7 +83,7 @@ export default function CreateEmployeeScreen() {
     },
   });
 
-  const imageUrl = watch('img_url');
+  const [imagePreviewUri, setImagePreviewUri] = useState<string | null>(null);
 
   const handleUploadImage = async () => {
     const result = await launchImageLibraryAsync({
@@ -93,107 +93,89 @@ export default function CreateEmployeeScreen() {
     });
 
     const selectedUri = (result as any).assets?.[0]?.uri || (result as any).uri;
-    if (!selectedUri || (result as any).canceled) {
-      return;
-    }
+    if (!selectedUri || (result as any).canceled) return;
 
-    const uploadUrl = `${API_BASE_URL}/upload-employee-image`;
     const filename = selectedUri.split('/').pop() || 'image.jpg';
     const match = filename.match(/\.([a-zA-Z0-9]+)$/);
     const fileType = match ? `image/${match[1].toLowerCase()}` : 'image/jpeg';
 
-    const formData = new FormData();
-    formData.append('image', {
+    const fileObj = {
       uri: selectedUri,
       name: filename,
       type: fileType,
-    } as any);
+    } as any;
 
-    try {
-      const response = await fetch(uploadUrl, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          Accept: 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Upload failed.');
-      }
-
-      const json = await response.json();
-      const uploadedUrl = json?.data?.url || json?.url || json?.path;
-
-      if (!uploadedUrl) {
-        throw new Error('Invalid upload response from server.');
-      }
-
-      setValue('img_url', uploadedUrl);
-      Alert.alert('Upload complete', 'Employee image uploaded successfully.');
-    } catch (error) {
-      Alert.alert('Upload failed', 'Unable to upload image. Please try again.');
-    }
+    // store the picked file in the form (will be sent with other data on submit)
+    setValue('img_file', fileObj);
+    setImagePreviewUri(selectedUri);
   };
 
   const onSubmit = async (data: EmployeeCreateFormData) => {
     try {
       setLoading(true);
+      // Build FormData and send to backend
+      const payload: Record<string, any> = { ...data } as any;
+      const response = await employeeService.create(payload);
 
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (response && response.success && response.data) {
+        // Expecting backend to return created user and employee
+        const created = response.data;
+        if (created.user) addUser(created.user as User);
+        if (created.employee) addEmployee(created.employee as Employee);
 
-      // Create mock employee with new ID
-      const newUserId = BigInt(Date.now());
-      const newUser: User = {
-        id: newUserId,
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        password: data.password,
-        role: data.role,
-        is_active: data.is_active || true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
+        Alert.alert('Success', 'Employee created successfully!', [
+          { text: 'OK', onPress: () => router.back() },
+        ]);
+      } else {
+        // fallback local add if backend not available
+        const newUserId = BigInt(Date.now());
+        const newUser: User = {
+          id: newUserId,
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          password: data.password,
+          role: data.role,
+          is_active: data.is_active || true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
 
-      addUser(newUser);
+        addUser(newUser);
 
-      const newEmployee: Employee = {
-        id: BigInt(Date.now()),
-        employee_user_id: newUserId,
-        user_id: newUserId,
-        code: data.code,
-        joining_date: data.joining_date,
-        address: data.address,
-        city: data.city,
-        district: data.district,
-        state: data.state,
-        pincode: data.pincode,
-        aadhar_no: data.aadhar_no || '',
-        uan: data.uan,
-        esi_no: data.esi_no,
-        pf_no: data.pf_no,
-        img_url: data.img_url || undefined,
-        wages: data.wages,
-        is_active: data.is_active || true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        user: newUser,
-      };
+        const newEmployee: Employee = {
+          id: BigInt(Date.now()),
+          employee_user_id: newUserId,
+          user_id: newUserId,
+          code: data.code,
+          joining_date: data.joining_date,
+          address: data.address,
+          city: data.city,
+          district: data.district,
+          state: data.state,
+          pincode: data.pincode,
+          aadhar_no: data.aadhar_no || '',
+          uan: data.uan,
+          esi_no: data.esi_no,
+          pf_no: data.pf_no,
+          img_url: undefined,
+          wages: data.wages,
+          is_active: data.is_active || true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          user: newUser,
+        };
 
-      addEmployee(newEmployee);
+        if ((data as any).img_file) {
+          (newEmployee as any).img_file = (data as any).img_file;
+        }
 
-      Alert.alert(
-        'Success',
-        'Employee created successfully!',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.back(),
-          },
-        ]
-      );
+        addEmployee(newEmployee);
+
+        Alert.alert('Success', 'Employee created locally (offline).', [
+          { text: 'OK', onPress: () => router.back() },
+        ]);
+      }
     } catch (error) {
       Alert.alert(
         'Error',
@@ -277,12 +259,13 @@ export default function CreateEmployeeScreen() {
       color: scheme.textSecondary,
       marginTop: spacing.xs,
     },
-    imagePreview: {
-      width: 120,
-      height: 120,
-      borderRadius: radius.md,
+    avatar: {
+      width: 96,
+      height: 96,
+      borderRadius: 48,
       marginTop: spacing.md,
       backgroundColor: scheme.surfaceSecondary,
+      alignSelf: 'center',
     },
     dateField: {
       padding: spacing.md,
@@ -387,37 +370,19 @@ export default function CreateEmployeeScreen() {
               )}
             />
 
-            <Controller
-              control={control}
-              name="img_url"
-              render={({ field: { value } }) => (
-                <>
-                  <Input
-                    label="Employee Image URL"
-                    value={value}
-                    editable={false}
-                    placeholder="Upload an image to generate the URL"
-                    error={errors.img_url?.message}
-                  />
-                  <Text style={styles.helperText}>
-                    Select an image and upload it to your backend. The resulting URL will be filled automatically.
-                  </Text>
-                  <Button
-                    title="Upload Image"
-                    onPress={handleUploadImage}
-                    variant="outline"
-                    size="sm"
-                    style={{ marginTop: spacing.sm }}
-                  />
-                  {imageUrl ? (
-                    <Image
-                      source={{ uri: imageUrl }}
-                      style={styles.imagePreview}
-                    />
-                  ) : null}
-                </>
-              )}
-            />
+            <View style={styles.choiceGroup}>
+              <Text style={styles.choiceLabel}>Employee Photo</Text>
+              <Button
+                title="Select Image"
+                onPress={handleUploadImage}
+                variant="outline"
+                size="sm"
+                style={{ marginTop: spacing.sm }}
+              />
+              {imagePreviewUri ? (
+                <Image source={{ uri: imagePreviewUri }} style={styles.avatar} />
+              ) : null}
+            </View>
 
             <Controller
               control={control}

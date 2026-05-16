@@ -26,6 +26,7 @@ import { employeeEditSchema, type EmployeeEditFormData } from '@/lib/validation'
 import { useEmployeeStore } from '@/store/employeeStore';
 import { useUserStore } from '@/store/userStore';
 import { Employee, User, UserRole } from '@/types/schema';
+import { employeeService } from '@/services/employeeService';
 
 export default function EditEmployeeScreen() {
   const router = useRouter();
@@ -36,7 +37,7 @@ export default function EditEmployeeScreen() {
   const { updateEmployee, setLoading, loading } = useEmployeeStore();
   const { updateUser } = useUserStore();
 
-  const roles: UserRole[] = ['salesman', 'rsm', 'sm'];
+  const roles: UserRole[] = ['salesman'];
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const formatDate = (dateString: string) => {
@@ -80,7 +81,6 @@ export default function EditEmployeeScreen() {
       state: '',
       pincode: '',
       aadhar_no: '',
-      img_url: '',
       uan: '',
       esi_no: '',
       pf_no: '',
@@ -115,6 +115,7 @@ export default function EditEmployeeScreen() {
       hasInitialized.current = true;
     }
   }, [employee, reset]);
+  const [imagePreviewUri, setImagePreviewUri] = useState<string | null>(null);
 
   const imageUrl = watch('img_url');
 
@@ -126,59 +127,32 @@ export default function EditEmployeeScreen() {
     });
 
     const selectedUri = (result as any).assets?.[0]?.uri || (result as any).uri;
-    if (!selectedUri || (result as any).canceled) {
-      return;
-    }
+    if (!selectedUri || (result as any).canceled) return;
 
-    const uploadUrl = `${API_BASE_URL}/upload-employee-image`;
     const filename = selectedUri.split('/').pop() || 'image.jpg';
     const match = filename.match(/\.([a-zA-Z0-9]+)$/);
     const fileType = match ? `image/${match[1].toLowerCase()}` : 'image/jpeg';
 
-    const formData = new FormData();
-    formData.append('image', {
+    const fileObj = {
       uri: selectedUri,
       name: filename,
       type: fileType,
-    } as any);
+    } as any;
 
-    try {
-      const response = await fetch(uploadUrl, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          Accept: 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Upload failed.');
-      }
-
-      const json = await response.json();
-      const uploadedUrl = json?.data?.url || json?.url || json?.path;
-
-      if (!uploadedUrl) {
-        throw new Error('Invalid upload response from server.');
-      }
-
-      setValue('img_url', uploadedUrl);
-      Alert.alert('Upload complete', 'Employee image uploaded successfully.');
-    } catch (error) {
-      Alert.alert('Upload failed', 'Unable to upload image. Please try again.');
-    }
+    setValue('img_file', fileObj);
+    setImagePreviewUri(selectedUri);
   };
 
   const onSubmit: SubmitHandler<EmployeeEditFormData> = async (formData) => {
     try {
       setLoading(true);
 
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Update employee data
-      const updatedEmployee = {
-        ...employee,
+      const payload: Record<string, any> = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        role: formData.role,
+        is_active: formData.is_active,
         code: formData.code,
         joining_date: formData.joining_date,
         address: formData.address,
@@ -187,52 +161,74 @@ export default function EditEmployeeScreen() {
         state: formData.state,
         pincode: formData.pincode,
         aadhar_no: formData.aadhar_no || '',
-        img_url: formData.img_url || undefined,
         uan: formData.uan,
         esi_no: formData.esi_no,
         pf_no: formData.pf_no,
         wages: formData.wages,
-        is_active: formData.is_active,
-        updated_at: new Date().toISOString(),
-        user: {
-          ...employee.user,
+      };
+
+      if (formData.password) payload.password = formData.password;
+      if ((formData as any).img_file) payload.img_file = (formData as any).img_file;
+
+      const response = await employeeService.update(employee.id, payload);
+
+      if (response && response.success && response.data) {
+        const updated = response.data;
+        if (updated.employee) updateEmployee(employee.id, updated.employee as Partial<Employee>);
+        if (updated.user) updateUser(employee.employee_user_id, updated.user as Partial<User>);
+
+        Alert.alert('Success', 'Employee updated successfully!', [
+          { text: 'OK', onPress: () => router.back() },
+        ]);
+      } else {
+        // Fallback local update
+        const updatedEmployee = {
+          ...employee,
+          code: formData.code,
+          joining_date: formData.joining_date,
+          address: formData.address,
+          city: formData.city,
+          district: formData.district,
+          state: formData.state,
+          pincode: formData.pincode,
+          aadhar_no: formData.aadhar_no || '',
+          ...(formData.img_file ? { img_file: formData.img_file } : {}),
+          uan: formData.uan,
+          esi_no: formData.esi_no,
+          pf_no: formData.pf_no,
+          wages: formData.wages,
+          is_active: formData.is_active,
+          updated_at: new Date().toISOString(),
+          user: {
+            ...employee.user,
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            role: formData.role,
+            is_active: formData.is_active,
+            updated_at: new Date().toISOString(),
+            ...(formData.password ? { password: formData.password } : {}),
+          },
+        };
+
+        updateEmployee(employee.id, updatedEmployee);
+        updateUser(employee.employee_user_id, {
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
           role: formData.role,
           is_active: formData.is_active,
           updated_at: new Date().toISOString(),
-          password: formData.password ? formData.password : employee.user?.password || '',
-        },
-      };
+          ...(formData.password ? { password: formData.password } : {}),
+        });
 
-      updateEmployee(employee.id, updatedEmployee);
-      updateUser(employee.employee_user_id, {
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        role: formData.role,
-        is_active: formData.is_active,
-        updated_at: new Date().toISOString(),
-        ...(formData.password ? { password: formData.password } : {}),
-      });
-
-      Alert.alert(
-        'Success',
-        'Employee updated successfully!',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.back(),
-          },
-        ]
-      );
+        Alert.alert('Success', 'Employee updated locally.', [
+          { text: 'OK', onPress: () => router.back() },
+        ]);
+      }
     } catch (error) {
-      Alert.alert(
-        'Error',
-        'Failed to update employee. Please try again.',
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Error', 'Failed to update employee. Please try again.', [{ text: 'OK' }]);
+      setImagePreviewUri(employee.img_url || null);
     } finally {
       setLoading(false);
     }
@@ -242,12 +238,6 @@ export default function EditEmployeeScreen() {
     container: {
       flex: 1,
       backgroundColor: scheme.background,
-    },
-    centerContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      paddingHorizontal: spacing.lg,
     },
     scrollContent: {
       paddingHorizontal: spacing.md,
@@ -327,6 +317,12 @@ export default function EditEmployeeScreen() {
     actionButtonLeft: {
       marginRight: spacing.md,
     },
+    centerContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: spacing.md,
+    },
     errorText: {
       fontSize: 16,
       textAlign: 'center',
@@ -336,12 +332,13 @@ export default function EditEmployeeScreen() {
       color: scheme.textSecondary,
       marginTop: spacing.xs,
     },
-    imagePreview: {
-      width: 120,
-      height: 120,
-      borderRadius: radius.md,
+    avatar: {
+      width: 96,
+      height: 96,
+      borderRadius: 48,
       marginTop: spacing.md,
       backgroundColor: scheme.surfaceSecondary,
+      alignSelf: 'center',
     },
   });
 
@@ -442,37 +439,19 @@ export default function EditEmployeeScreen() {
               )}
             />
 
-            <Controller
-              control={control}
-              name="img_url"
-              render={({ field: { value } }) => (
-                <>
-                  <Input
-                    label="Employee Image URL"
-                    value={value}
-                    editable={false}
-                    placeholder="Upload an image to generate the URL"
-                    error={errors.img_url?.message}
-                  />
-                  <Text style={styles.helperText}>
-                    Select an image and upload it to your backend. The resulting URL will be filled automatically.
-                  </Text>
-                  <Button
-                    title="Upload Image"
-                    onPress={handleUploadImage}
-                    variant="outline"
-                    size="sm"
-                    style={{ marginTop: spacing.sm }}
-                  />
-                  {imageUrl ? (
-                    <Image
-                      source={{ uri: imageUrl }}
-                      style={styles.imagePreview}
-                    />
-                  ) : null}
-                </>
-              )}
-            />
+            <View style={styles.choiceGroup}>
+              <Text style={styles.choiceLabel}>Employee Photo</Text>
+              <Button
+                title="Select Image"
+                onPress={handleUploadImage}
+                variant="outline"
+                size="sm"
+                style={{ marginTop: spacing.sm }}
+              />
+              {imagePreviewUri ? (
+                <Image source={{ uri: imagePreviewUri }} style={styles.avatar} />
+              ) : null}
+            </View>
 
             <Controller
               control={control}

@@ -7,6 +7,7 @@ import {
   useColorScheme,
   TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { Card, Badge, SectionHeader } from '@/components/ui/Card';
 import { Avatar, StatusIndicator } from '@/components/ui/Avatar';
@@ -110,6 +111,9 @@ export default function ContactDetailScreen() {
       color: scheme.textPrimary,
       marginBottom: spacing.sm,
     },
+    badge:{
+      alignSelf: 'center',
+    },
     category: {
       fontSize: 14,
       color: scheme.textSecondary,
@@ -189,19 +193,20 @@ export default function ContactDetailScreen() {
   });
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
-    >
-      <Card style={styles.heroCard}>
+    <SafeAreaView style={styles.container}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <Card style={styles.heroCard}>
         <Avatar initials={getInitials(contact.name)} size="lg" />
         <View style={styles.nameSection}>
-          <Text style={styles.name}>{contact.name}</Text>
-          <Text style={styles.category}>{contact.category}</Text>
+          <Text style={styles.name}>{contact.name}</Text>          
           <Badge
             label={contact.category?.toUpperCase() || 'N/A'}
             variant={getCategoryVariant(contact.category)}
+            style={styles.badge}
           />
         </View>
       </Card>
@@ -264,5 +269,6 @@ export default function ContactDetailScreen() {
         </View>
       </Card>
     </ScrollView>
+  </SafeAreaView>
   );
 }

@@ -54,6 +54,30 @@ export default function RootLayout() {
           }}
         />
         <Stack.Screen
+          name="users/index"
+          options={{
+            title: 'Users',
+          }}
+        />
+        <Stack.Screen
+          name="users/create"
+          options={{
+            title: 'Create User',
+          }}
+        />
+        <Stack.Screen
+          name="users/[id]"
+          options={{
+            title: 'User Detail',
+          }}
+        />
+        <Stack.Screen
+          name="users/[id]/edit"
+          options={{
+            title: 'Edit User',
+          }}
+        />
+        <Stack.Screen
           name="contacts/index"
           options={{
             title: 'Contacts',

@@ -39,6 +39,14 @@ export default function HomeScreen() {
       route: '/contacts',
     },
     {
+      id: 'users',
+      title: 'Users',
+      subtitle: 'Managers & Admins',
+      icon: '🧑‍💼',
+      description: 'Create and manage company admins, RSMs, and SMs',
+      route: '/users',
+    },
+    {
       id: 'network',
       title: 'Hierarchy',
       subtitle: 'Organization Structure',

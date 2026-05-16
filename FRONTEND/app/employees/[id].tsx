@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Card, Badge, SectionHeader } from '@/components/ui/Card';
 import { Avatar, StatusIndicator } from '@/components/ui/Avatar';
@@ -249,13 +250,14 @@ export default function EmployeeDetailScreen() {
   });
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
-    >
-      <Card style={styles.heroCard}>
-        <Avatar initials={getInitials(user?.name || 'N/A')} imageUrl={employee.img_url} size="lg" />
+    <SafeAreaView style={styles.container}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <Card style={styles.heroCard}>
+          <Avatar initials={getInitials(user?.name || 'N/A')} imageUrl={employee.img_url} size="lg" />
         <View style={styles.nameSection}>
           <Text style={styles.name}>{user?.name || 'N/A'}</Text>
           <Text style={styles.email}>{user?.email || 'N/A'}</Text>
@@ -362,5 +364,6 @@ export default function EmployeeDetailScreen() {
         />
       </View>
     </ScrollView>
+  </SafeAreaView>
   );
 }
